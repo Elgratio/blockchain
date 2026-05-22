@@ -1,0 +1,92 @@
+{
+  "users": {
+    "0x70997970C51812dc3A010C7d01b50e0d17dc79C8": {
+      "id": "a7879660-9528-464a-a384-89d8fafe7d78",
+      "walletAddress": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+      "role": "DONOR",
+      "name": "Budi Santoso",
+      "email": "budi@email.com",
+      "phone": null,
+      "dataHash": "bafkrei7ab403d2e4b2ecca4a6c1448f3d49bd80292a1",
+      "isVerified": false,
+      "isActive": true,
+      "createdAt": "2026-05-21T06:02:19.126Z",
+      "updatedAt": "2026-05-21T06:02:19.126Z"
+    },
+    "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC": {
+      "id": "c8d73380-e59c-47a7-b1e5-8ea2ca8d6f1a",
+      "walletAddress": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+      "role": "STORE",
+      "name": "Toko Berkah Pangan",
+      "email": null,
+      "phone": "08123456789",
+      "dataHash": "bafkreidd68a62e85265f3ec44408d3642a911e6d8c52",
+      "isVerified": false,
+      "isActive": true,
+      "createdAt": "2026-05-21T06:02:19.133Z",
+      "updatedAt": "2026-05-21T06:02:19.133Z"
+    },
+    "0x90F79bf6EB2c4f870365E785982E1f101E93b906": {
+      "id": "d18dda54-73d0-41e1-94c0-9bcc2edd78cb",
+      "walletAddress": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+      "role": "RECIPIENT",
+      "name": "Siti Rahayu",
+      "email": null,
+      "phone": "08987654321",
+      "dataHash": "bafkreie77d63b8738a3ab817003c299e80ab1f5e37b6",
+      "isVerified": false,
+      "isActive": true,
+      "createdAt": "2026-05-21T06:02:19.138Z",
+      "updatedAt": "2026-05-21T06:02:19.138Z"
+    },
+    "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65": {
+      "id": "407454dc-6c04-42e1-b607-e3d3a6fa2092",
+      "walletAddress": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",
+      "role": "COURIER",
+      "name": "Kurir Express",
+      "email": null,
+      "phone": "08555111222",
+      "dataHash": "bafkreid3a285c9f78a26a4d5d0a4c30e73193ddff7b2",
+      "isVerified": false,
+      "isActive": true,
+      "createdAt": "2026-05-21T06:02:19.144Z",
+      "updatedAt": "2026-05-21T06:02:19.144Z"
+    }
+  },
+  "products": {
+    "1b478369-52b6-4625-b9cc-3d0cb952f77a": {
+      "id": "1b478369-52b6-4625-b9cc-3d0cb952f77a",
+      "onChainId": 1,
+      "storeAddress": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+      "name": "Beras Premium 5kg",
+      "price": "75000",
+      "imageHash": "bafkrei3c457c6f0664d08ac695130861801aeeb525b1",
+      "certificationHash": "bafkrei614d279852f02962211c1659c1d50d09f364ec",
+      "expiryDate": "2026-08-19",
+      "isAvailable": true,
+      "stock": 50,
+      "createdAt": "2026-05-21T06:02:19.285Z"
+    }
+  },
+  "donations": {
+    "827e60c9-e158-45dc-8950-67da1f5608f8": {
+      "id": "827e60c9-e158-45dc-8950-67da1f5608f8",
+      "onChainId": 1,
+      "donorAddress": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+      "storeAddress": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+      "recipientAddress": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+      "courierAddress": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",
+      "totalAmount": "75000",
+      "status": "COMPLETED",
+      "txHashCreate": "0xMOCK_041f5d88d1e3e000",
+      "createdAt": "2026-05-21T06:02:19.348Z",
+      "updatedAt": "2026-05-21T06:02:19.371Z",
+      "packingPhotoHash": "bafkreib49dc295926f4394d81677a93dd3c1114fb9ef",
+      "pickupPhotoHash": "bafkreia694956d5b97cf02267c303d7b4a38c6f260e8",
+      "receivedPhotoHash": "bafkrei4adf8e681ebcf735c14f5485ff57cefa4ad2f2",
+      "recipientRating": 5,
+      "txHashComplete": "0xMOCK_aa6756c386533000"
+    }
+  },
+  "disputes": {}
+}

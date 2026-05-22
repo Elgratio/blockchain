@@ -1,0 +1,40 @@
+{
+    "name": "foodchain-backend",
+    "version": "1.0.0",
+    "description": "FoodChain Backend API — Blockchain Food Donation Platform",
+    "main": "src/server.js",
+    "scripts": {
+        "dev": "nodemon src/server.js",
+        "start": "node src/server.js",
+        "db:migrate": "prisma migrate dev",
+        "db:generate": "prisma generate",
+        "db:studio": "prisma studio",
+        "test": "jest --runInBand",
+        "test:watch": "jest --watch"
+    },
+    "dependencies": {
+        "@pinata/sdk": "^2.1.0",
+        "@prisma/client": "^5.8.0",
+        "axios": "^1.6.0",
+        "cors": "^2.8.5",
+        "dotenv": "^16.4.0",
+        "ethers": "^6.10.0",
+        "express": "^4.18.0",
+        "express-rate-limit": "^7.1.0",
+        "firebase-admin": "^12.0.0",
+        "helmet": "^7.1.0",
+        "jsonwebtoken": "^9.0.0",
+        "morgan": "^1.10.0",
+        "multer": "^2.1.1",
+        "uuid": "^9.0.0",
+        "winston": "^3.11.0",
+        "zod": "^3.22.0"
+    },
+    "devDependencies": {
+        "@types/node": "^20.0.0",
+        "jest": "^29.0.0",
+        "nodemon": "^3.0.0",
+        "prisma": "^5.8.0",
+        "supertest": "^6.3.0"
+    }
+}

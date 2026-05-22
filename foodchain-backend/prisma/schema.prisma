@@ -1,0 +1,116 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  DONOR
+  // STORE
+  RECIPIENT
+  COURIER
+  ADMIN
+}
+
+enum DonationStatus {
+  CREATED
+  // STORE_CONFIRMED
+  // IN_DELIVERY
+  // DELIVERED
+  COMPLETED
+  DISPUTED
+  REFUNDED
+}
+
+model User {
+  id            String    @id @default(uuid())
+  walletAddress String    @unique
+  role          UserRole
+  name          String?
+  email         String?
+  phone         String?
+  dataHash      String    // IPFS hash data pribadi
+  isVerified    Boolean   @default(false)
+  isActive      Boolean   @default(true)
+  fcmToken      String?   // Firebase push notification token
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  donationsAsDonor     Donation[] @relation("DonorDonations")
+  donationsAsRecipient Donation[] @relation("RecipientDonations")
+  donationsAsStore     Donation[] @relation("StoreDonations")
+  donationsAsCourier   Donation[] @relation("CourierDonations")
+  products             Product[]
+}
+
+
+model Product {
+  id                  String   @id @default(uuid())
+  onChainId           Int?     @unique  // ID dari smart contract
+  storeAddress        String
+  name                String
+  price               BigInt   // Dalam unit terkecil stablecoin
+  imageHash           String   // IPFS hash
+  certificationHash   String   // IPFS hash sertifikat
+  expiryDate          DateTime
+  isAvailable         Boolean  @default(true)
+  stock               Int
+  createdAt           DateTime @default(now())
+
+  store     User       @relation(fields: [storeAddress], references: [walletAddress])
+  donations DonationProduct[]
+}
+
+
+model Donation {
+  id                 String         @id @default(uuid())
+  onChainId          Int?           @unique  // ID dari smart contract
+  donorAddress       String
+  storeAddress       String
+  recipientAddress   String
+  courierAddress     String
+  totalAmount        BigInt
+  status             DonationStatus @default(CREATED)
+  packingPhotoHash   String?
+  pickupPhotoHash    String?
+  receivedPhotoHash  String?
+  recipientRating    Int?
+  txHashCreate       String?        // Tx hash blockchain
+  txHashComplete     String?
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+
+  donor     User @relation("DonorDonations",     fields: [donorAddress],     references: [walletAddress])
+  store     User @relation("StoreDonations",     fields: [storeAddress],     references: [walletAddress])
+  recipient User @relation("RecipientDonations", fields: [recipientAddress], references: [walletAddress])
+  courier   User @relation("CourierDonations",   fields: [courierAddress],   references: [walletAddress])
+
+  products  DonationProduct[]
+  dispute   Dispute?
+}
+
+model DonationProduct {
+  donationId String
+  productId  String
+  donation   Donation @relation(fields: [donationId], references: [id])
+  product    Product  @relation(fields: [productId],  references: [id])
+  @@id([donationId, productId])
+}
+
+model Dispute {
+  id                 String   @id @default(uuid())
+  donationId         String   @unique
+  raisedBy           String
+  evidenceHash       String
+  storeResponseHash  String?
+  result             String   @default("PENDING") // PENDING | STORE_WIN | DONOR_WIN
+  resolvedBy         String?
+  resolutionNotes    String?
+  raisedAt           DateTime @default(now())
+  resolvedAt         DateTime?
+
+  donation Donation @relation(fields: [donationId], references: [id])
+}
