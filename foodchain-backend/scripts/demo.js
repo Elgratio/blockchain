@@ -54,6 +54,7 @@ async function main() {
     // [02] Register semua aktor
     step(2, 'Register Semua Aktor (5 pengguna)');
     const actors = [
+        { walletAddress: WALLETS.admin,     role: 'ADMIN',     name: 'Admin FoodChain',   email: 'admin@foodchain.id' },
         { walletAddress: WALLETS.donor,     role: 'DONOR',     name: 'Budi Santoso',      email: 'budi@email.com'     },
         { walletAddress: WALLETS.store,     role: 'STORE',     name: 'Toko Berkah Pangan',phone: '08123456789'        },
         { walletAddress: WALLETS.recipient, role: 'RECIPIENT', name: 'Siti Rahayu',       phone: '08987654321'        },

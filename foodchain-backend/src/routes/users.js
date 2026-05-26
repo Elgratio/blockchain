@@ -37,10 +37,17 @@ router.post('/register', async (req, res) => {
         const isVerified = role === 'ADMIN';
 
         const user = {
-        id: uuid(), walletAddress, role, name,
-        email: email || null, phone: phone || null,
-        dataHash, isVerified, isActive: true,
-        createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+            id: uuid(), 
+            walletAddress, 
+            role, 
+            name,
+            email: email || null, 
+            phone: phone || null,
+            dataHash, 
+            isVerified, 
+            isActive: true,
+            createdAt: new Date().toISOString(), 
+            updatedAt: new Date().toISOString(),
         };
         await db.users.insert(user);
 
@@ -75,12 +82,14 @@ router.post('/login', async (req, res) => {
     }
 });
 
-// ── POST /api/users/login-dev — tanpa signature (hanya development) ──
+// ── POST /api/users/login-dev — tanpa signature (hanya development) 
 router.post('/login-dev', async (req, res) => {
     if (process.env.NODE_ENV === 'production')
         return res.status(403).json(fail('Endpoint ini hanya tersedia di development'));
+
     const { walletAddress } = req.body;
     const user = await db.users.findByWallet(walletAddress);
+    
     if (!user) return res.status(404).json(fail('User tidak ditemukan. Register dulu.'));
     const token = generateToken(walletAddress, user.role);
     return res.json(ok('Login dev berhasil', { token, user }));

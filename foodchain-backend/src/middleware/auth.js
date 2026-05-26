@@ -28,7 +28,7 @@ async function authMiddleware(req, res, next) {
 
         const token   = header.split(' ')[1];
         const decoded = jwt.verify(token, env.JWT_SECRET);
-        const user    = db.users.findByWallet(decoded.walletAddress);
+        const user    = await db.users.findByWallet(decoded.walletAddress);
 
         if (!user || !user.isActive)
         return res.status(401).json(fail('Akun tidak aktif atau tidak ditemukan'));
