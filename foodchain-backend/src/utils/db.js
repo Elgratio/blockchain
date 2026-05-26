@@ -1,82 +1,113 @@
-const fs     = require('fs');
-const path   = require('path');
-const logger = require('./logger');
+// src/utils/db.js
+require('dotenv').config();
+const logger  = require('./logger');
+const useJSON = process.env.USE_JSON_DB !== 'false'; // default: JSON
 
-const DB_FILE = path.join(__dirname, '../../foodchain-db.json');
 
-// Load atau inisialisasi database
-let store = { users: {}, products: {}, donations: {}, disputes: {} };
-    if (fs.existsSync(DB_FILE)) {
-    try {
-        store = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
-    } catch (e) {
-        logger.warn('DB file corrupt, starting fresh');
-    }
-}
+// PostgreSQL via Prisma (Produksi)
 
-function save() {
-    fs.writeFileSync(DB_FILE, JSON.stringify(store, null, 2));
-}
+function makePrismaDB() {
+  const { PrismaClient } = require('@prisma/client');
+  const prisma = new PrismaClient({ log: ['warn', 'error'] });
 
-const db = {
-    // ── Users ───────────────────────────────────────────────────
+  logger.info('Database: PostgreSQL + Prisma mode');
+
+  return {
     users: {
-        insert:       (u)       => { store.users[u.walletAddress] = u; save(); return u; },
-        findByWallet: (w)       => store.users[w] || null,
-        findAll:      ()        => Object.values(store.users),
-        update:       (w, fields) => {
-        if (store.users[w]) {
-            Object.assign(store.users[w], fields, { updatedAt: new Date().toISOString() });
-            save();
+      insert: async u => prisma.user.create({
+        data: {
+          id: u.id, walletAddress: u.walletAddress, role: u.role,
+          name: u.name, email: u.email, phone: u.phone,
+          dataHash: u.dataHash || '', isVerified: u.isVerified || false,
+          isActive: u.isActive !== false,
         }
-        },
+      }),
+      findByWallet: async w  => prisma.user.findUnique({ where: { walletAddress: w } }),
+      findAll:      async () => prisma.user.findMany({ orderBy: { createdAt: 'desc' } }),
+      update: async (w, f) => {
+        const data = {};
+        if (f.isVerified !== undefined) data.isVerified = f.isVerified;
+        if (f.isActive   !== undefined) data.isActive   = f.isActive;
+        if (f.name)  data.name  = f.name;
+        if (f.email) data.email = f.email;
+        if (f.phone) data.phone = f.phone;
+        return prisma.user.update({ where: { walletAddress: w }, data });
+      },
     },
 
-    // ── Products ─────────────────────────────────────────────────
     products: {
-        insert:         (p)   => { store.products[p.id] = p; save(); return p; },
-        findById:       (id)  => store.products[id] || null,
-        findByOnChainId:(oid) => Object.values(store.products).find(p => p.onChainId === oid) || null,
-        findAll:        (filter = {}) => Object.values(store.products).filter(p =>
-        (!filter.storeAddress || p.storeAddress === filter.storeAddress) &&
-        (!filter.isAvailable  || p.isAvailable  === filter.isAvailable)
-        ),
-        update: (id, fields) => {
-        if (store.products[id]) { Object.assign(store.products[id], fields); save(); }
-        },
-    },
-
-    // ── Donations ─────────────────────────────────────────────────
-    donations: {
-        insert:   (d)   => { store.donations[d.id] = d; save(); return d; },
-        findById: (id)  => store.donations[id] || null,
-        findAll:  (filter = {}) => Object.values(store.donations).filter(d =>
-        (!filter.donorAddress     || d.donorAddress     === filter.donorAddress)     &&
-        (!filter.storeAddress     || d.storeAddress     === filter.storeAddress)     &&
-        (!filter.recipientAddress || d.recipientAddress === filter.recipientAddress) &&
-        (!filter.courierAddress   || d.courierAddress   === filter.courierAddress)   &&
-        (!filter.status           || d.status           === filter.status)
-        ).sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
-        update: (id, fields) => {
-        if (store.donations[id]) {
-            Object.assign(store.donations[id], fields, { updatedAt: new Date().toISOString() });
-            save();
+      insert: async p => prisma.product.create({
+        data: {
+          id: p.id, onChainId: p.onChainId, storeAddress: p.storeAddress,
+          name: p.name, price: p.price.toString(),
+          imageHash: p.imageHash || '', certificationHash: p.certificationHash || '',
+          expiryDate: p.expiryDate, isAvailable: p.isAvailable !== false,
+          stock: p.stock || 0,
         }
-        },
+      }),
+      findById:        async id  => prisma.product.findUnique({ where: { id } }),
+      findByOnChainId: async oid => prisma.product.findUnique({ where: { onChainId: oid } }),
+      findAll: async (f = {}) => {
+        const where = {};
+        if (f.storeAddress)            where.storeAddress = f.storeAddress;
+        if (f.isAvailable !== undefined) where.isAvailable = f.isAvailable;
+        return prisma.product.findMany({ where, orderBy: { createdAt: 'desc' } });
+      },
+      update: async (id, f) => {
+        const data = {};
+        if (f.isAvailable !== undefined) data.isAvailable = f.isAvailable;
+        if (f.stock       !== undefined) data.stock       = f.stock;
+        return prisma.product.update({ where: { id }, data });
+      },
     },
 
-    // ── Disputes ──────────────────────────────────────────────────
+    donations: {
+      insert: async d => prisma.donation.create({
+        data: {
+          id: d.id, onChainId: d.onChainId,
+          donorAddress: d.donorAddress, storeAddress: d.storeAddress,
+          recipientAddress: d.recipientAddress, courierAddress: d.courierAddress,
+          totalAmount: d.totalAmount.toString(), status: d.status || 'CREATED',
+          txHashCreate: d.txHashCreate,
+        }
+      }),
+      findById: async id => prisma.donation.findUnique({ where: { id }, include: { dispute: true } }),
+      findAll: async (f = {}) => {
+        const where = {};
+        if (f.donorAddress)     where.donorAddress     = f.donorAddress;
+        if (f.storeAddress)     where.storeAddress     = f.storeAddress;
+        if (f.recipientAddress) where.recipientAddress = f.recipientAddress;
+        if (f.courierAddress)   where.courierAddress   = f.courierAddress;
+        if (f.status)           where.status           = f.status;
+        return prisma.donation.findMany({ where, orderBy: { createdAt: 'desc' } });
+      },
+      update: async (id, f) => {
+        const data = {};
+        const keys = ['status','packingPhotoHash','pickupPhotoHash','receivedPhotoHash',
+                      'recipientRating','txHashCreate','txHashComplete'];
+        for (const k of keys) if (f[k] !== undefined) data[k] = f[k];
+        return prisma.donation.update({ where: { id }, data });
+      },
+    },
+
     disputes: {
-        insert:          (d)          => { store.disputes[d.donationId] = d; save(); return d; },
-        findByDonation:  (donationId) => store.disputes[donationId] || null,
-        update:          (donationId, fields) => {
-        if (store.disputes[donationId]) { Object.assign(store.disputes[donationId], fields); save(); }
-        },
+      insert: async d => prisma.dispute.create({
+        data: {
+          id: d.id, donationId: d.donationId, raisedBy: d.raisedBy,
+          evidenceHash: d.evidenceHash, result: d.result || 'PENDING',
+        }
+      }),
+      findByDonation: async did => prisma.dispute.findUnique({ where: { donationId: did } }),
+      update: async (did, f) => {
+        const data = {};
+        const keys = ['storeResponseHash','result','resolvedBy','resolutionNotes','resolvedAt'];
+        for (const k of keys) if (f[k] !== undefined) data[k] = f[k];
+        return prisma.dispute.update({ where: { donationId: did }, data });
+      },
     },
 
-    // Hapus semua data (untuk testing ulang)
-    clear: () => { store = { users:{}, products:{}, donations:{}, disputes:{} }; save(); },
-};
+    _prisma: prisma, // expose untuk query kompleks
+  };
+}
 
-logger.info('Database JSON ready  → ' + DB_FILE);
-module.exports = db;
+module.exports = makePrismaDB();

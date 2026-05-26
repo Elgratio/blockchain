@@ -15,9 +15,9 @@ router.post('/', authMiddleware, requireRole('DONOR'), async (req, res) => {
         if (!storeAddress || !recipientAddress || !courierAddress || !productIds?.length || !amount)
         return res.status(400).json(fail('storeAddress, recipientAddress, courierAddress, productIds, amount diperlukan'));
 
-        const store     = db.users.findByWallet(storeAddress);
-        const recipient = db.users.findByWallet(recipientAddress);
-        const courier   = db.users.findByWallet(courierAddress);
+        const store     = await db.users.findByWallet(storeAddress);
+        const recipient = await db.users.findByWallet(recipientAddress);
+        const courier   = await db.users.findByWallet(courierAddress);
 
         if (!store     || store.role     !== 'STORE')     return res.status(400).json(fail('Toko tidak valid'));
         if (!recipient || recipient.role !== 'RECIPIENT') return res.status(400).json(fail('Penerima tidak valid'));
@@ -34,7 +34,7 @@ router.post('/', authMiddleware, requireRole('DONOR'), async (req, res) => {
             totalAmount: amount.toString(), status: 'CREATED', txHashCreate: txHash,
             createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
         };
-        db.donations.insert(donation);
+        await db.donations.insert(donation);
 
         await notify.sendToAddress(storeAddress, {
             title: '🛒 Order Donasi Baru!', body: 'Segera konfirmasi dan siapkan barang.',
@@ -49,7 +49,7 @@ router.post('/', authMiddleware, requireRole('DONOR'), async (req, res) => {
 });
 
 // ── GET /api/donations — list donasi sesuai role ──────────────
-router.get('/', authMiddleware, (req, res) => {
+router.get('/', authMiddleware, async (req, res) => {
     const { status, page = 1, limit = 10 } = req.query;
     const { walletAddress, role } = req.user;
     const colMap = {
@@ -60,7 +60,7 @@ router.get('/', authMiddleware, (req, res) => {
     if (colMap[role]) filter[colMap[role]] = walletAddress;
     if (status)       filter.status = status;
 
-    const all   = db.donations.findAll(filter);
+    const all   = await db.donations.findAll(filter);
     const start = (Number(page) - 1) * Number(limit);
     return res.json(ok('Daftar donasi', {
         donations: all.slice(start, start + Number(limit)), total: all.length,
@@ -70,7 +70,7 @@ router.get('/', authMiddleware, (req, res) => {
 // ── GET /api/donations/:id — detail donasi ────────────────────
 router.get('/:id', authMiddleware, async (req, res) => {
     try {
-        const donation = db.donations.findById(req.params.id);
+        const donation = await db.donations.findById(req.params.id);
         if (!donation) return res.status(404).json(fail('Donasi tidak ditemukan'));
 
         let onChainData = null;
@@ -87,7 +87,7 @@ router.get('/:id', authMiddleware, async (req, res) => {
 router.post('/:id/store-confirm', authMiddleware, requireRole('STORE'), async (req, res) => {
     try {
         const { photoNote } = req.body;
-        const donation = db.donations.findById(req.params.id);
+        const donation = await db.donations.findById(req.params.id);
         if (!donation) return res.status(404).json(fail('Donasi tidak ditemukan'));
         if (donation.storeAddress !== req.user.walletAddress) return res.status(403).json(fail('Bukan order Anda'));
         if (donation.status !== 'CREATED')
@@ -99,7 +99,7 @@ router.post('/:id/store-confirm', authMiddleware, requireRole('STORE'), async (r
         });
         const txHash = await blockchain.storeConfirmOnChain(donation.onChainId, photoHash);
 
-        db.donations.update(donation.id, { status: 'STORE_CONFIRMED', packingPhotoHash: photoHash });
+        await db.donations.update(donation.id, { status: 'STORE_CONFIRMED', packingPhotoHash: photoHash });
         await notify.sendToAddress(donation.courierAddress, {
         title: 'Barang Siap Diambil', body: 'Segera ambil dari toko.',
         });
@@ -115,7 +115,7 @@ router.post('/:id/store-confirm', authMiddleware, requireRole('STORE'), async (r
 router.post('/:id/courier-pickup', authMiddleware, requireRole('COURIER'), async (req, res) => {
     try {
         const { photoNote } = req.body;
-        const donation = db.donations.findById(req.params.id);
+        const donation = await db.donations.findById(req.params.id);
         if (!donation) return res.status(404).json(fail('Donasi tidak ditemukan'));
         if (donation.courierAddress !== req.user.walletAddress) return res.status(403).json(fail('Bukan tugas Anda'));
         if (donation.status !== 'STORE_CONFIRMED')
@@ -127,7 +127,7 @@ router.post('/:id/courier-pickup', authMiddleware, requireRole('COURIER'), async
         });
         const txHash = await blockchain.courierPickupOnChain(donation.onChainId, photoHash);
 
-        db.donations.update(donation.id, { status: 'IN_DELIVERY', pickupPhotoHash: photoHash });
+        await db.donations.update(donation.id, { status: 'IN_DELIVERY', pickupPhotoHash: photoHash });
         await notify.sendToAddress(donation.recipientAddress, {
         title: 'Barang Sedang Dikirim', body: 'Kurir sedang mengantar.',
         });
@@ -146,7 +146,7 @@ router.post('/:id/recipient-confirm', authMiddleware, requireRole('RECIPIENT'), 
         if (!rating || rating < 1 || rating > 5)
         return res.status(400).json(fail('Rating 1–5 diperlukan'));
 
-        const donation = db.donations.findById(req.params.id);
+        const donation = await db.donations.findById(req.params.id);
         if (!donation) return res.status(404).json(fail('Donasi tidak ditemukan'));
         if (donation.recipientAddress !== req.user.walletAddress) return res.status(403).json(fail('Bukan donasi Anda'));
         if (donation.status !== 'IN_DELIVERY')
@@ -159,7 +159,7 @@ router.post('/:id/recipient-confirm', authMiddleware, requireRole('RECIPIENT'), 
         const txHash    = await blockchain.recipientConfirmOnChain(donation.onChainId, photoHash, Number(rating));
         const newStatus = Number(rating) >= 3 ? 'COMPLETED' : 'DISPUTED';
 
-        db.donations.update(donation.id, {
+        await db.donations.update(donation.id, {
             status: newStatus, receivedPhotoHash: photoHash,
             recipientRating: Number(rating), txHashComplete: txHash,
         });

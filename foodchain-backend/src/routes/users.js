@@ -20,7 +20,7 @@ router.post('/register', async (req, res) => {
         if (!validRoles.includes(role))
         return res.status(400).json(fail('Role tidak valid. Pilih: ' + validRoles.join(', ')));
 
-        if (db.users.findByWallet(walletAddress))
+        if (await db.users.findByWallet(walletAddress))
         return res.status(409).json(fail('Wallet address sudah terdaftar'));
 
         const dataHash = await ipfs.uploadJSON(
@@ -42,7 +42,7 @@ router.post('/register', async (req, res) => {
         dataHash, isVerified, isActive: true,
         createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
         };
-        db.users.insert(user);
+        await db.users.insert(user);
 
         const msg = role === 'ADMIN'
         ? 'Admin berhasil terdaftar dan langsung terverifikasi.'
@@ -64,7 +64,7 @@ router.post('/login', async (req, res) => {
         if (!verifyWalletSignature(message, signature, walletAddress))
         return res.status(401).json(fail('Signature wallet tidak valid'));
 
-        const user = db.users.findByWallet(walletAddress);
+        const user = await db.users.findByWallet(walletAddress);
         if (!user)      return res.status(404).json(fail('Pengguna belum terdaftar'));
         if (!user.isActive) return res.status(401).json(fail('Akun tidak aktif'));
 
@@ -76,11 +76,11 @@ router.post('/login', async (req, res) => {
 });
 
 // ── POST /api/users/login-dev — tanpa signature (hanya development) ──
-router.post('/login-dev', (req, res) => {
+router.post('/login-dev', async (req, res) => {
     if (process.env.NODE_ENV === 'production')
         return res.status(403).json(fail('Endpoint ini hanya tersedia di development'));
     const { walletAddress } = req.body;
-    const user = db.users.findByWallet(walletAddress);
+    const user = await db.users.findByWallet(walletAddress);
     if (!user) return res.status(404).json(fail('User tidak ditemukan. Register dulu.'));
     const token = generateToken(walletAddress, user.role);
     return res.json(ok('Login dev berhasil', { token, user }));
@@ -99,8 +99,8 @@ router.get('/me', authMiddleware, async (req, res) => {
 });
 
 // ── GET /api/users/all — semua pengguna (admin only) ──────────
-router.get('/all', authMiddleware, requireRole('ADMIN'), (req, res) => {
-    const users = db.users.findAll();
+router.get('/all', authMiddleware, requireRole('ADMIN'), async (req, res) => {
+    const users = await db.users.findAll();
     return res.json(ok('Semua pengguna', { users, total: users.length }));
 });
 
@@ -108,7 +108,7 @@ router.get('/all', authMiddleware, requireRole('ADMIN'), (req, res) => {
 router.post('/verify/:address', authMiddleware, requireRole('ADMIN'), async (req, res) => {
     try {
         const { address } = req.params;
-        const user = db.users.findByWallet(address);
+        const user = await db.users.findByWallet(address);
         if (!user) return res.status(404).json(fail('User tidak ditemukan'));
         if (user.isVerified) return res.status(400).json(fail('User sudah diverifikasi'));
 
@@ -117,7 +117,7 @@ router.post('/verify/:address', authMiddleware, requireRole('ADMIN'), async (req
         if (user.role !== 'ADMIN') {
         txHash = await blockchain.verifyUserOnChain(address);
         }
-        db.users.update(address, { isVerified: true });
+        await db.users.update(address, { isVerified: true });
         return res.json(ok('Pengguna berhasil diverifikasi', { address, txHash }));
     } catch (err) {
         return res.status(500).json(fail(err.message));

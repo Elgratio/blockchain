@@ -8,21 +8,27 @@ datasource db {
 }
 
 enum UserRole {
+  ADMIN
   DONOR
-  // STORE
+  STORE
   RECIPIENT
   COURIER
-  ADMIN
 }
 
 enum DonationStatus {
   CREATED
-  // STORE_CONFIRMED
-  // IN_DELIVERY
-  // DELIVERED
+  STORE_CONFIRMED
+  IN_DELIVERY
+  DELIVERED
   COMPLETED
   DISPUTED
   REFUNDED
+}
+
+enum DisputeResult {
+  PENDING
+  STORE_WIN
+  DONOR_WIN
 }
 
 model User {
@@ -32,85 +38,85 @@ model User {
   name          String?
   email         String?
   phone         String?
-  dataHash      String    // IPFS hash data pribadi
+  dataHash      String    @default("")
   isVerified    Boolean   @default(false)
   isActive      Boolean   @default(true)
-  fcmToken      String?   // Firebase push notification token
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  donationsAsDonor     Donation[] @relation("DonorDonations")
-  donationsAsRecipient Donation[] @relation("RecipientDonations")
-  donationsAsStore     Donation[] @relation("StoreDonations")
-  donationsAsCourier   Donation[] @relation("CourierDonations")
   products             Product[]
+  donationsAsDonor     Donation[] @relation("DonorDonations")
+  donationsAsStore     Donation[] @relation("StoreDonations")
+  donationsAsRecipient Donation[] @relation("RecipientDonations")
+  donationsAsCourier   Donation[] @relation("CourierDonations")
 }
 
-
 model Product {
-  id                  String   @id @default(uuid())
-  onChainId           Int?     @unique  // ID dari smart contract
-  storeAddress        String
-  name                String
-  price               BigInt   // Dalam unit terkecil stablecoin
-  imageHash           String   // IPFS hash
-  certificationHash   String   // IPFS hash sertifikat
-  expiryDate          DateTime
-  isAvailable         Boolean  @default(true)
-  stock               Int
-  createdAt           DateTime @default(now())
+  id                String    @id @default(uuid())
+  onChainId         Int?      @unique
+  storeAddress      String
+  name              String
+  price             String
+  imageHash         String    @default("")
+  certificationHash String    @default("")
+  expiryDate        String
+  isAvailable       Boolean   @default(true)
+  stock             Int       @default(0)
+  createdAt         DateTime  @default(now())
 
-  store     User       @relation(fields: [storeAddress], references: [walletAddress])
+  store     User              @relation(fields: [storeAddress], references: [walletAddress])
   donations DonationProduct[]
 }
 
-
 model Donation {
-  id                 String         @id @default(uuid())
-  onChainId          Int?           @unique  // ID dari smart contract
-  donorAddress       String
-  storeAddress       String
-  recipientAddress   String
-  courierAddress     String
-  totalAmount        BigInt
-  status             DonationStatus @default(CREATED)
-  packingPhotoHash   String?
-  pickupPhotoHash    String?
-  receivedPhotoHash  String?
-  recipientRating    Int?
-  txHashCreate       String?        // Tx hash blockchain
-  txHashComplete     String?
-  createdAt          DateTime       @default(now())
-  updatedAt          DateTime       @updatedAt
+  id                String         @id @default(uuid())
+  onChainId         Int?           @unique
+  donorAddress      String
+  storeAddress      String
+  recipientAddress  String
+  courierAddress    String
+  totalAmount       String
+  status            DonationStatus @default(CREATED)
+  packingPhotoHash  String?
+  pickupPhotoHash   String?
+  receivedPhotoHash String?
+  recipientRating   Int?
+  txHashCreate      String?
+  txHashComplete    String?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
 
   donor     User @relation("DonorDonations",     fields: [donorAddress],     references: [walletAddress])
   store     User @relation("StoreDonations",     fields: [storeAddress],     references: [walletAddress])
   recipient User @relation("RecipientDonations", fields: [recipientAddress], references: [walletAddress])
   courier   User @relation("CourierDonations",   fields: [courierAddress],   references: [walletAddress])
 
-  products  DonationProduct[]
-  dispute   Dispute?
+  products DonationProduct[]
+  dispute  Dispute?
 }
 
 model DonationProduct {
   donationId String
   productId  String
-  donation   Donation @relation(fields: [donationId], references: [id])
-  product    Product  @relation(fields: [productId],  references: [id])
+  quantity   Int     @default(1)
+
+  donation Donation @relation(fields: [donationId], references: [id])
+  product  Product  @relation(fields: [productId],  references: [id])
+
   @@id([donationId, productId])
 }
 
 model Dispute {
-  id                 String   @id @default(uuid())
-  donationId         String   @unique
-  raisedBy           String
-  evidenceHash       String
-  storeResponseHash  String?
-  result             String   @default("PENDING") // PENDING | STORE_WIN | DONOR_WIN
-  resolvedBy         String?
-  resolutionNotes    String?
-  raisedAt           DateTime @default(now())
-  resolvedAt         DateTime?
+  id                String        @id @default(uuid())
+  donationId        String        @unique
+  raisedBy          String
+  evidenceHash      String
+  storeResponseHash String?
+  result            DisputeResult @default(PENDING)
+  resolvedBy        String?
+  resolutionNotes   String?
+  raisedAt          DateTime      @default(now())
+  resolvedAt        DateTime?
 
   donation Donation @relation(fields: [donationId], references: [id])
 }

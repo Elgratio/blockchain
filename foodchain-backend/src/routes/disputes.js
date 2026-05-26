@@ -13,13 +13,13 @@ router.post('/', authMiddleware, requireRole('RECIPIENT'), async (req, res) => {
         const { donationId, evidenceNote } = req.body;
         if (!donationId) return res.status(400).json(fail('donationId diperlukan'));
 
-        const donation = db.donations.findById(donationId);
+        const donation = await db.donations.findById(donationId);
         if (!donation) return res.status(404).json(fail('Donasi tidak ditemukan'));
         if (donation.recipientAddress !== req.user.walletAddress)
         return res.status(403).json(fail('Bukan donasi Anda'));
         if (donation.status !== 'DISPUTED')
         return res.status(400).json(fail('Status donasi harus DISPUTED (terjadi saat rating < 3)'));
-        if (db.disputes.findByDonation(donationId))
+        if (await db.disputes.findByDonation(donationId))
         return res.status(409).json(fail('Dispute sudah ada untuk donasi ini'));
 
         const evidenceHash = await ipfs.uploadJSON({
@@ -32,7 +32,7 @@ router.post('/', authMiddleware, requireRole('RECIPIENT'), async (req, res) => {
         id: uuid(), donationId, raisedBy: req.user.walletAddress,
         evidenceHash, result: 'PENDING', raisedAt: new Date().toISOString(),
         };
-        db.disputes.insert(dispute);
+        await db.disputes.insert(dispute);
 
         return res.status(201).json(ok('Dispute berhasil diajukan. Dana tetap terkunci.', {
         dispute, evidenceUrl: ipfs.getIPFSUrl(evidenceHash), txHash,
@@ -48,7 +48,7 @@ router.post('/:donationId/respond', authMiddleware, requireRole('STORE'), async 
         const { donationId } = req.params;
         const { responseNote } = req.body;
 
-        const dispute = db.disputes.findByDonation(donationId);
+        const dispute = await db.disputes.findByDonation(donationId);
         if (!dispute) return res.status(404).json(fail('Dispute tidak ditemukan'));
         if (dispute.result !== 'PENDING') return res.status(400).json(fail('Dispute sudah diselesaikan'));
 
@@ -56,7 +56,7 @@ router.post('/:donationId/respond', authMiddleware, requireRole('STORE'), async 
             action: 'response', donationId,
             note: responseNote || 'Barang sudah sesuai', ts: new Date().toISOString(),
         });
-        db.disputes.update(donationId, { storeResponseHash: responseHash });
+        await db.disputes.update(donationId, { storeResponseHash: responseHash });
 
         return res.json(ok('Respons berhasil dikirim', {
             responseHash, responseUrl: ipfs.getIPFSUrl(responseHash),
@@ -75,8 +75,8 @@ router.post('/:donationId/resolve', authMiddleware, requireRole('ADMIN'), async 
         if (!['STORE_WIN', 'DONOR_WIN'].includes(result))
         return res.status(400).json(fail('result harus STORE_WIN atau DONOR_WIN'));
 
-        const donation = db.donations.findById(donationId);
-        const dispute  = db.disputes.findByDonation(donationId);
+        const donation = await db.donations.findById(donationId);
+        const dispute  = await db.disputes.findByDonation(donationId);
         if (!donation || !dispute) return res.status(404).json(fail('Donasi/dispute tidak ditemukan'));
 
         const notesHash   = await ipfs.uploadJSON({
@@ -86,8 +86,8 @@ router.post('/:donationId/resolve', authMiddleware, requireRole('ADMIN'), async 
         const txHash      = await blockchain.resolveDisputeOnChain(donation.onChainId, result, notesHash);
         const finalStatus = result === 'DONOR_WIN' ? 'REFUNDED' : 'COMPLETED';
 
-        db.donations.update(donationId, { status: finalStatus });
-        db.disputes.update(donationId, {
+        await db.donations.update(donationId, { status: finalStatus });
+        await db.disputes.update(donationId, {
             result, resolvedBy: req.user.walletAddress,
             resolutionNotes: resolutionNotes || '', resolvedAt: new Date().toISOString(),
         });
@@ -99,8 +99,8 @@ router.post('/:donationId/resolve', authMiddleware, requireRole('ADMIN'), async 
 });
 
 // ── GET /api/disputes/:donationId — detail dispute ────────────
-router.get('/:donationId', authMiddleware, (req, res) => {
-    const dispute = db.disputes.findByDonation(req.params.donationId);
+router.get('/:donationId', authMiddleware, async (req, res) => {
+    const dispute = await db.disputes.findByDonation(req.params.donationId);
     if (!dispute) return res.status(404).json(fail('Dispute tidak ditemukan'));
     return res.json(ok('Detail dispute', { dispute }));
 });

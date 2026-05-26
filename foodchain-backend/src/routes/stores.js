@@ -8,10 +8,10 @@ const { authMiddleware, requireRole } = require('../middleware/auth');
 const { ok, fail } = require('../utils/response');
 
 // ── GET /api/stores/products — daftar produk tersedia ─────────
-router.get('/products', (req, res) => {
+router.get('/products', async (req, res) => {
     const { storeAddress, page = 1, limit = 10 } = req.query;
     const filter = { isAvailable: true, ...(storeAddress ? { storeAddress } : {}) };
-    const all    = db.products.findAll(filter);
+    const all    = await db.products.findAll(filter);
     const start  = (Number(page) - 1) * Number(limit);
     return res.json(ok('Daftar produk', {
         products:   all.slice(start, start + Number(limit)),
@@ -20,8 +20,8 @@ router.get('/products', (req, res) => {
 });
 
 // ── GET /api/stores/my-products — produk milik toko ini ───────
-router.get('/my-products', authMiddleware, requireRole('STORE'), (req, res) => {
-    const products = db.products.findAll({ storeAddress: req.user.walletAddress });
+router.get('/my-products', authMiddleware, requireRole('STORE'), async (req, res) => {
+    const products = await db.products.findAll({ storeAddress: req.user.walletAddress });
     return res.json(ok('Produk saya', { products, total: products.length }));
 });
 
@@ -49,7 +49,7 @@ router.post('/products', authMiddleware, requireRole('STORE'), async (req, res) 
             expiryDate, isAvailable: true, stock: Number(stock),
             createdAt: new Date().toISOString(),
         };
-        db.products.insert(product);
+        await db.products.insert(product);
 
         return res.status(201).json(ok('Produk berhasil didaftarkan on-chain', {
             product, txHash, imageUrl: ipfs.getIPFSUrl(imageHash),
