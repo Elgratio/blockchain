@@ -14,13 +14,16 @@ export const connectWallet = async () => {
     signer = await provider.getSigner();
     const address = await signer.getAddress();
     
-    // Listen for account changes
     window.ethereum.on('accountsChanged', (accounts) => {
       if (accounts.length === 0) {
         disconnectWallet();
       } else {
         window.location.reload();
       }
+    });
+
+    window.ethereum.on('chainChanged', () => {
+      window.location.reload();
     });
 
     return address;
@@ -38,6 +41,21 @@ export const getWalletAddress = async () => {
     return await signer.getAddress();
   }
   return null;
+};
+
+export const getBalance = async () => {
+  if (!provider) {
+    return null;
+  }
+  try {
+    const address = await getWalletAddress();
+    if (!address) return null;
+    const balance = await provider.getBalance(address);
+    return ethers.formatEther(balance);
+  } catch (error) {
+    console.error('Failed to get balance:', error);
+    return null;
+  }
 };
 
 export const signMessage = async (message) => {
@@ -65,7 +83,7 @@ export const switchToPolygon = async () => {
   try {
     await window.ethereum.request({
       method: 'wallet_switchEthereumChain',
-      params: [{ chainId: '0x13881' }], // Mumbai testnet
+      params: [{ chainId: '0x13881' }],
     });
   } catch (error) {
     if (error.code === 4902) {

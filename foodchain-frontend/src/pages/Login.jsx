@@ -1,15 +1,15 @@
-import React, { useState, useEffect } from 'react';
+// src/pages/Login.jsx
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { signMessage, getWalletAddress } from '../services/wallet';
 import { FiAlertCircle, FiCheckCircle } from 'react-icons/fi';
 
 const Login = () => {
-  const { loginWithWallet, loginDev, connectWallet, walletAddress, isAuthenticated } = useAuth();
+  const { loginWithWallet, loginDev, connectWallet, walletAddress, isAuthenticated, loading } = useAuth();
   const [step, setStep] = useState(1);
-  const [signature, setSignature] = useState(null);
-  const [message] = useState(`Welcome to FoodChain!\n\nSign this message to authenticate.\nTimestamp: ${Date.now()}`);
   const [devAddress, setDevAddress] = useState('');
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -18,38 +18,44 @@ const Login = () => {
     }
   }, [isAuthenticated, navigate]);
 
-  const handleConnectWallet = async () => {
+  const handleConnectWallet = useCallback(async () => {
     try {
       await connectWallet();
       setStep(2);
     } catch (error) {
       console.error(error);
     }
-  };
+  }, [connectWallet]);
 
-  const handleSignMessage = async () => {
+  const handleSignMessage = useCallback(async () => {
+    if (isLoggingIn) return;
+    
+    const message = `Welcome to FoodChain!\n\nSign this message to authenticate.\nTimestamp: ${Date.now()}`;
+    setIsLoggingIn(true);
     try {
       const sig = await signMessage(message);
-      setSignature(sig);
       await loginWithWallet(sig, message);
       navigate('/dashboard');
     } catch (error) {
       console.error(error);
+    } finally {
+      setIsLoggingIn(false);
     }
-  };
+  }, [loginWithWallet, navigate, isLoggingIn]);
 
-  const handleDevLogin = async () => {
-    if (!devAddress) {
-      alert('Please enter a wallet address');
-      return;
-    }
+  const handleDevLogin = useCallback(async () => {
+    if (!devAddress || isLoggingIn) return;
+    
+    setIsLoggingIn(true);
     try {
       await loginDev(devAddress);
       navigate('/dashboard');
     } catch (error) {
       console.error(error);
+    } finally {
+      setIsLoggingIn(false);
     }
-  };
+  }, [devAddress, loginDev, navigate, isLoggingIn]);
 
   const wallets = [
     { address: '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266', name: 'Admin' },
@@ -78,6 +84,7 @@ const Login = () => {
                 value={devAddress}
                 onChange={(e) => setDevAddress(e.target.value)}
                 className="input mb-3"
+                disabled={loading || isLoggingIn}
               >
                 <option value="">Select a wallet</option>
                 {wallets.map((wallet) => (
@@ -86,8 +93,12 @@ const Login = () => {
                   </option>
                 ))}
               </select>
-              <button onClick={handleDevLogin} className="btn-secondary w-full">
-                Login as User
+              <button 
+                onClick={handleDevLogin} 
+                className="btn-secondary w-full"
+                disabled={!devAddress || loading || isLoggingIn}
+              >
+                {isLoggingIn ? 'Logging in...' : 'Login as User'}
               </button>
               <div className="relative my-6">
                 <div className="absolute inset-0 flex items-center">
@@ -101,32 +112,33 @@ const Login = () => {
           )}
 
           {step === 1 && (
-            <div>
-              <button onClick={handleConnectWallet} className="btn-primary w-full">
-                Connect MetaMask Wallet
-              </button>
-            </div>
+            <button onClick={handleConnectWallet} className="btn-primary w-full" disabled={loading}>
+              {loading ? 'Connecting...' : 'Connect MetaMask Wallet'}
+            </button>
           )}
 
           {step === 2 && walletAddress && (
             <div>
               <div className="bg-gray-50 rounded-lg p-4 mb-4">
                 <p className="text-sm text-gray-600 mb-2">Connected Wallet:</p>
-                <p className="font-mono text-sm">{walletAddress}</p>
+                <p className="font-mono text-sm break-all">{walletAddress}</p>
               </div>
               <div className="bg-yellow-50 rounded-lg p-4 mb-4">
                 <div className="flex items-start space-x-2">
-                  <FiAlertCircle className="text-yellow-600 mt-0.5" />
+                  <FiAlertCircle className="text-yellow-600 mt-0.5 flex-shrink-0" />
                   <div>
                     <p className="text-sm text-yellow-800">
                       Please sign the message below to authenticate
                     </p>
-                    <p className="text-xs text-yellow-600 mt-1 break-all">{message}</p>
                   </div>
                 </div>
               </div>
-              <button onClick={handleSignMessage} className="btn-primary w-full">
-                Sign Message & Login
+              <button 
+                onClick={handleSignMessage} 
+                className="btn-primary w-full"
+                disabled={isLoggingIn}
+              >
+                {isLoggingIn ? 'Signing...' : 'Sign Message & Login'}
               </button>
             </div>
           )}
