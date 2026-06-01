@@ -1,208 +1,169 @@
-// src/contexts/AuthContext.jsx
-
-import React, { createContext, useState, useContext, useEffect, useCallback, useRef } from 'react';
-import { login, loginDev, register, verifyUser, getMe } from '../services/api';
-import { connectWallet, getWalletAddress, disconnectWallet } from '../services/wallet';
+import React, { createContext, useState, useContext, useEffect } from 'react';
+import {
+  login,
+  loginDev as loginDevApi,    // ✅ FIX: rename import untuk hindari konflik
+  register,
+  verifyUser as verifyUserApi, // ✅ konsisten, hindari konflik
+  getMe
+} from '../services/api';
+import { connectWallet, getWalletAddress, disconnectWallet, getBalance } from '../services/wallet';
 import toast from 'react-hot-toast';
 
 const AuthContext = createContext();
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within AuthProvider');
-  }
-  return context;
-};
+export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [token, setToken] = useState(() => localStorage.getItem('token'));
+  const [user,          setUser]          = useState(null);
+  const [token,         setToken]         = useState(localStorage.getItem('token'));
   const [walletAddress, setWalletAddress] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [initialized, setInitialized] = useState(false);
-  const fetchingRef = useRef(false);
+  const [balance,       setBalance]       = useState(null);
+  const [loading,       setLoading]       = useState(false);
 
-  // Check wallet connection once on mount
   useEffect(() => {
-    const checkWallet = async () => {
-      const address = await getWalletAddress();
-      if (address) setWalletAddress(address);
-    };
-    checkWallet();
-  }, []);
+    if (token) fetchUser();
+    checkWalletConnection();
+  }, []);  // eslint-disable-line
 
-  // Fetch user when token changes (only once)
   useEffect(() => {
-    if (token && !user && !fetchingRef.current) {
-      fetchUser();
-    } else if (!token && user) {
-      setUser(null);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token]);
+    if (walletAddress) fetchBalance();
+  }, [walletAddress]);
 
-  const fetchUser = useCallback(async () => {
-    if (fetchingRef.current) return;
-    fetchingRef.current = true;
+  const checkWalletConnection = async () => {
+    const address = await getWalletAddress();
+    if (address) setWalletAddress(address);
+  };
+
+  const fetchBalance = async () => {
+    const bal = await getBalance();
+    setBalance(bal);
+  };
+
+  const fetchUser = async () => {
     try {
-      const response = await getMe(token);
-      if (response.success) {
-        setUser(response.data);
-      } else {
-        // Token invalid
-        localStorage.removeItem('token');
-        setToken(null);
-      }
+      const storedToken = localStorage.getItem('token');
+      if (!storedToken) return;
+      const response = await getMe(storedToken);
+      if (response.success) setUser(response.data);
     } catch (error) {
       console.error('Failed to fetch user:', error);
-      localStorage.removeItem('token');
-      setToken(null);
-    } finally {
-      fetchingRef.current = false;
-      setInitialized(true);
+      logout();
     }
-  }, [token]);
+  };
 
-  const connectWalletHandler = useCallback(async () => {
+  const connectWalletHandler = async () => {
     try {
-      setLoading(true);
       const address = await connectWallet();
       setWalletAddress(address);
+      await fetchBalance();
       toast.success(`Wallet connected: ${address.slice(0, 6)}...${address.slice(-4)}`);
       return address;
     } catch (error) {
       toast.error('Failed to connect wallet');
       throw error;
-    } finally {
-      setLoading(false);
     }
-  }, []);
+  };
 
-  const loginWithWallet = useCallback(async (signature, message) => {
-    if (!walletAddress) {
-      toast.error('Please connect wallet first');
-      throw new Error('No wallet connected');
-    }
-    
+  const loginWithWallet = async (signature, message) => {
     try {
       setLoading(true);
       const response = await login(walletAddress, signature, message);
       if (response.success) {
-        const newToken = response.data.token;
-        localStorage.setItem('token', newToken);
-        setToken(newToken);
+        localStorage.setItem('token', response.data.token);
+        setToken(response.data.token);
         setUser(response.data.user);
-        toast.success('Login successful!');
+        toast.success('Login berhasil!');
         return response;
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Login failed');
+      toast.error(error.response?.data?.message || 'Login gagal');
       throw error;
     } finally {
       setLoading(false);
     }
-  }, [walletAddress]);
+  };
 
-  const loginDevHandler = useCallback(async (walletAddr) => {
-    if (!walletAddr) {
-      toast.error('Please select a wallet address');
-      return;
-    }
-    
+  // ✅ FIX: panggil loginDevApi (renamed import), bukan loginDev (diri sendiri)
+  const loginDev = async (walletAddr) => {
     try {
       setLoading(true);
-      const response = await loginDev(walletAddr);
+      const response = await loginDevApi(walletAddr);
       if (response.success) {
-        const newToken = response.data.token;
-        localStorage.setItem('token', newToken);
-        setToken(newToken);
+        localStorage.setItem('token', response.data.token);
+        setToken(response.data.token);
         setUser(response.data.user);
         setWalletAddress(walletAddr);
-        toast.success('Login successful (dev mode)!');
+        await fetchBalance();
+        toast.success('Login berhasil (dev mode)!');
         return response;
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Login failed');
+      toast.error(error.response?.data?.message || 'Login gagal');
       throw error;
     } finally {
       setLoading(false);
     }
-  }, []);
+  };
 
-  const registerUser = useCallback(async (userData) => {
+  const registerUser = async (userData) => {
     try {
       setLoading(true);
       const response = await register(userData);
       if (response.success) {
-        toast.success('Registration successful! Waiting for admin verification.');
+        toast.success('Registrasi berhasil! Menunggu verifikasi admin.');
         return response;
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Registration failed');
+      toast.error(error.response?.data?.message || 'Registrasi gagal');
       throw error;
     } finally {
       setLoading(false);
     }
-  }, []);
+  };
 
-  const verifyUserHandler = useCallback(async (address) => {
+  // ✅ FIX: panggil verifyUserApi (renamed import)
+  const verifyUserHandler = async (address) => {
     try {
-      setLoading(true);
-      const response = await verifyUser(address, token);
+      const response = await verifyUserApi(address);
       if (response.success) {
-        toast.success('User verified successfully!');
+        toast.success('Pengguna berhasil diverifikasi!');
         if (user?.walletAddress === address) {
-          setUser(prev => ({ ...prev, isVerified: true }));
+          setUser({ ...user, isVerified: true });
         }
         return response;
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Verification failed');
+      toast.error(error.response?.data?.message || 'Verifikasi gagal');
       throw error;
-    } finally {
-      setLoading(false);
     }
-  }, [token, user?.walletAddress]);
+  };
 
-  const logout = useCallback(() => {
+  const logout = () => {
     localStorage.removeItem('token');
     setToken(null);
     setUser(null);
     disconnectWallet();
     setWalletAddress(null);
+    setBalance(null);
     toast.success('Logged out');
-  }, []);
-
-  // Don't render until initialized to prevent flickering
-  if (!initialized && token) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  const value = {
-    user,
-    token,
-    walletAddress,
-    loading,
-    initialized,
-    connectWallet: connectWalletHandler,
-    loginWithWallet,
-    loginDev: loginDevHandler,
-    registerUser,
-    verifyUser: verifyUserHandler,
-    logout,
-    isAuthenticated: !!token && !!user,
   };
 
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider value={{
+      user,
+      token,
+      walletAddress,
+      balance,
+      loading,
+      connectWallet:   connectWalletHandler,
+      loginWithWallet,
+      loginDev,           // ✅ method context (bukan import)
+      registerUser,
+      verifyUser:      verifyUserHandler,
+      logout,
+      refreshBalance:  fetchBalance,
+      isAuthenticated: !!token,
+    }}>
       {children}
     </AuthContext.Provider>
   );

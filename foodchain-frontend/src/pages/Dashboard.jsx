@@ -1,14 +1,13 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import DonationDemo from '../components/Demo/DonationDemo';
-import { FiHeart, FiPackage, FiUsers, FiTruck, FiActivity } from 'react-icons/fi';
+import { FiHeart, FiPackage, FiUsers, FiTruck, FiActivity, FiDollarSign } from 'react-icons/fi';
 
 const Dashboard = () => {
   const { user, balance } = useAuth();
-  const [activeTab, setActiveTab] = useState('demo');
+  const [activeTab, setActiveTab] = useState('overview');
 
   const tabs = [
-    { id: 'demo', label: 'Demo Donation', icon: FiActivity },
+    { id: 'overview', label: 'Overview', icon: FiActivity },
     { id: 'stats', label: 'Statistics', icon: FiHeart },
   ];
 
@@ -34,12 +33,24 @@ const Dashboard = () => {
             {user?.isVerified ? ' ✓ Verified' : ' ⏳ Pending Verification'}
           </p>
         </div>
-        {balance && (
-          <div className="text-right">
-            <p className="text-sm text-gray-500">MATIC Balance</p>
-            <p className="text-xl font-bold text-primary-600">{parseFloat(balance).toFixed(4)} MATIC</p>
+      </div>
+
+      {/* Balance Card - Tetap di Dashboard */}
+      <div className="bg-gradient-to-r from-primary-600 to-primary-700 rounded-xl p-6 text-white">
+        <div className="flex justify-between items-center">
+          <div>
+            <p className="text-primary-100 text-sm">Your Wallet Balance</p>
+            <p className="text-3xl font-bold mt-1">
+              {balance ? `${parseFloat(balance).toFixed(4)} MATIC` : '0 MATIC'}
+            </p>
+            <p className="text-primary-100 text-xs mt-1">
+              {user?.walletAddress?.slice(0, 15)}...{user?.walletAddress?.slice(-4)}
+            </p>
           </div>
-        )}
+          <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+            <FiDollarSign className="text-2xl" />
+          </div>
+        </div>
       </div>
 
       {/* Quick Stats */}
@@ -89,7 +100,35 @@ const Dashboard = () => {
 
       {/* Tab Content */}
       <div>
-        {activeTab === 'demo' && <DonationDemo />}
+        {activeTab === 'overview' && (
+          <div className="card">
+            <h3 className="font-semibold text-gray-800 mb-4">Welcome to FoodChain</h3>
+            <p className="text-gray-600">
+              FoodChain connects donors with stores, couriers, and recipients in a transparent,
+              secure, and efficient ecosystem powered by blockchain technology.
+            </p>
+            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-blue-50 rounded-lg p-3">
+                <p className="text-sm font-semibold text-blue-800">Quick Links</p>
+                <ul className="text-sm text-blue-600 mt-2 space-y-1">
+                  <li>• View available products in Products page</li>
+                  <li>• Create new donation in Donations page</li>
+                  <li>• Track your donation history</li>
+                </ul>
+              </div>
+              <div className="bg-green-50 rounded-lg p-3">
+                <p className="text-sm font-semibold text-green-800">How it Works</p>
+                <ul className="text-sm text-green-600 mt-2 space-y-1">
+                  <li>1. Select product and recipient</li>
+                  <li>2. Create donation (funds locked)</li>
+                  <li>3. Store confirms packing</li>
+                  <li>4. Courier picks up</li>
+                  <li>5. Recipient confirms + rating</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        )}
         {activeTab === 'stats' && (
           <div className="card">
             <h3 className="font-semibold text-gray-800 mb-4">Coming Soon</h3>

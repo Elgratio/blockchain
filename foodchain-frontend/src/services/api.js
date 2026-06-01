@@ -7,15 +7,45 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: false,
 });
 
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+// Interceptor untuk menambahkan token ke setiap request
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    console.log('Request config:', {
+      url: config.url,
+      method: config.method,
+      hasToken: !!token
+    });
+    
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
   }
-  return config;
-});
+);
+
+// Response interceptor untuk debugging
+api.interceptors.response.use(
+  (response) => {
+    console.log('Response success:', response.config.url, response.status);
+    return response;
+  },
+  (error) => {
+    console.error('Response error:', {
+      url: error.config?.url,
+      status: error.response?.status,
+      message: error.response?.data?.message,
+      hasToken: !!localStorage.getItem('token')
+    });
+    return Promise.reject(error);
+  }
+);
 
 // Users
 export const register = async (userData) => {
@@ -41,8 +71,17 @@ export const getMe = async (token) => {
 };
 
 export const getAllUsers = async () => {
-  const response = await api.get('/users/all');
-  return response.data;
+  try {
+    const token = localStorage.getItem('token');
+    console.log('getAllUsers called, token exists:', !!token);
+    
+    const response = await api.get('/users/all');
+    console.log('getAllUsers response:', response.status, response.data);
+    return response.data;
+  } catch (error) {
+    console.error('getAllUsers error:', error.response?.status, error.response?.data);
+    throw error;
+  }
 };
 
 export const verifyUser = async (address, token) => {
@@ -54,8 +93,17 @@ export const verifyUser = async (address, token) => {
 
 // Products
 export const listProducts = async (params = {}) => {
-  const response = await api.get('/stores/products', { params });
-  return response.data;
+  try {
+    const token = localStorage.getItem('token');
+    console.log('listProducts called, token exists:', !!token);
+    
+    const response = await api.get('/stores/products', { params });
+    console.log('listProducts response:', response.status, response.data?.data?.products?.length);
+    return response.data;
+  } catch (error) {
+    console.error('listProducts error:', error.response?.status, error.response?.data);
+    throw error;
+  }
 };
 
 export const getMyProducts = async () => {
@@ -123,6 +171,43 @@ export const resolveDispute = async (donationId, data) => {
 export const getDispute = async (donationId) => {
   const response = await api.get(`/disputes/${donationId}`);
   return response.data;
+};
+
+// Get all recipients (available for all authenticated users)
+export const getRecipients = async () => {
+  try {
+    const response = await api.get('/users/recipients');
+    console.log('getRecipients response:', response.data);
+    // Return the full response data structure
+    return response.data;
+  } catch (error) {
+    console.error('getRecipients error:', error.response?.status, error.response?.data);
+    throw error;
+  }
+};
+
+// Get all couriers (available for all authenticated users)
+export const getCouriers = async () => {
+  try {
+    const response = await api.get('/users/couriers');
+    console.log('getCouriers response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('getCouriers error:', error.response?.status, error.response?.data);
+    throw error;
+  }
+};
+
+// Get all stores (available for all authenticated users)
+export const getStores = async () => {
+  try {
+    const response = await api.get('/users/stores');
+    console.log('getStores response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('getStores error:', error.response?.status, error.response?.data);
+    throw error;
+  }
 };
 
 export default api;

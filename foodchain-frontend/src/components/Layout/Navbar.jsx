@@ -5,7 +5,7 @@ import { FiHome, FiPackage, FiHeart, FiUsers, FiLogOut, FiUser, FiAlertCircle } 
 import { BiDonateHeart } from 'react-icons/bi';
 
 const Navbar = () => {
-  const { user, logout, isAuthenticated, walletAddress, connectWallet } = useAuth();
+  const { user, logout, isAuthenticated, walletAddress, connectWallet, balance } = useAuth();
   const navigate = useNavigate();
 
   const navItems = [
@@ -30,6 +30,11 @@ const Navbar = () => {
         {user.role}
       </span>
     );
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
   };
 
   return (
@@ -67,6 +72,13 @@ const Navbar = () => {
             <div className="flex items-center space-x-4">
               {isAuthenticated ? (
                 <>
+                  {balance && (
+                    <div className="hidden md:block px-3 py-1 bg-green-100 rounded-full">
+                      <span className="text-xs text-green-700 font-medium">
+                        {parseFloat(balance).toFixed(4)} MATIC
+                      </span>
+                    </div>
+                  )}
                   <div className="flex items-center space-x-3">
                     <div className="hidden md:block">
                       <div className="flex items-center space-x-2">
@@ -79,7 +91,7 @@ const Navbar = () => {
                       </div>
                     </div>
                     <button
-                      onClick={logout}
+                      onClick={handleLogout}
                       className="flex items-center space-x-1 text-red-600 hover:text-red-700"
                     >
                       <FiLogOut />

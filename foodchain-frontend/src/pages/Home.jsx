@@ -120,7 +120,7 @@ const Home = () => {
         </p>
         {!isAuthenticated ? (
           <Link to="/login" className="btn-primary inline-flex items-center space-x-2">
-            <span>Connect Wallet</span>
+            <span>Get Started</span>
             <FiArrowRight />
           </Link>
         ) : (
