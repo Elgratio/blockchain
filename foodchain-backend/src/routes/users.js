@@ -29,7 +29,14 @@ router.post('/register', async (req, res) => {
 
     let txHash = 'N/A (admin tidak dicatat on-chain)';
     if (role !== 'ADMIN') {
-      txHash = await blockchain.registerUserOnChain(walletAddress, role, dataHash);
+      try {
+        txHash = await blockchain.registerUserOnChain(walletAddress, role, dataHash);
+        console.log('Blockchain registration successful:', txHash);
+      } catch (blockchainError) {
+        console.error('Blockchain registration failed:', blockchainError);
+        // Jangan throw error, tetap lanjutkan tapi beri warning
+        txHash = 'FAILED: ' + blockchainError.message;
+      }
     }
 
     const isVerified = role === 'ADMIN';
@@ -159,6 +166,25 @@ router.get('/stores', authMiddleware, async (req, res) => {
     return res.json(ok('Daftar toko', { stores, total: stores.length }));
   } catch (err) {
     console.error('Error in /stores:', err);
+    return res.status(500).json(fail(err.message));
+  }
+});
+
+// POST /api/users/register-onchain - Register user to blockchain (Admin only)
+router.post('/register-onchain/:address', authMiddleware, requireRole('ADMIN'), async (req, res) => {
+  try {
+    const { address } = req.params;
+    const user = db.users.findByWallet(address);
+    
+    if (!user) {
+      return res.status(404).json(fail('User not found'));
+    }
+    
+    const txHash = await blockchain.registerUserOnChain(address, user.role, user.dataHash);
+    await blockchain.verifyUserOnChain(address);
+    
+    return res.json(ok('User registered on blockchain', { txHash }));
+  } catch (err) {
     return res.status(500).json(fail(err.message));
   }
 });

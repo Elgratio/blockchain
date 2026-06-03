@@ -105,23 +105,35 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+// Update the registerUser function in AuthContext
+
   const registerUser = async (userData) => {
     try {
       setLoading(true);
+      console.log('Registering user with data:', userData);
+      
       const response = await register(userData);
+      console.log('Registration response:', response);
+      
       if (response.success) {
-        toast.success('Registrasi berhasil! Menunggu verifikasi admin.');
+        toast.success('Registration successful! Waiting for admin verification.');
         return response;
+      } else {
+        toast.error(response.message || 'Registration failed');
+        throw new Error(response.message);
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Registrasi gagal');
+      console.error('Registration error details:', error);
+      console.error('Error response:', error.response?.data);
+      const errorMessage = error.response?.data?.message || error.message || 'Registration failed';
+      toast.error(errorMessage);
       throw error;
     } finally {
       setLoading(false);
     }
   };
 
-  // ✅ FIX: panggil verifyUserApi (renamed import)
+  // FIX: panggil verifyUserApi (renamed import)
   const verifyUserHandler = async (address) => {
     try {
       const response = await verifyUserApi(address);

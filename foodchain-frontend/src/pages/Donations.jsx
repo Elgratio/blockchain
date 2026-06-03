@@ -49,12 +49,9 @@ const Donations = () => {
     }
   };
 
-  // Update the fetchFormData function to handle response correctly
-
   const fetchFormData = async () => {
     setDataLoading(true);
     try {
-      // Fetch all data in parallel
       const [productsRes, recipientsRes, couriersRes, storesRes] = await Promise.all([
         listProducts(),
         getRecipients(),
@@ -62,29 +59,24 @@ const Donations = () => {
         getStores()
       ]);
       
-      console.log('Products response:', productsRes);
-      console.log('Recipients response:', recipientsRes);
-      console.log('Couriers response:', couriersRes);
-      console.log('Stores response:', storesRes);
-      
       if (productsRes.success) {
         setProducts(productsRes.data.products || []);
-        console.log('Products loaded:', productsRes.data.products?.length);
+        console.log('Products loaded:', productsRes.data.products);
       }
       
       if (recipientsRes.success) {
         setRecipients(recipientsRes.data.recipients || []);
-        console.log('Recipients loaded:', recipientsRes.data.recipients?.length);
+        console.log('Recipients loaded:', recipientsRes.data.recipients);
       }
       
       if (couriersRes.success) {
         setCouriers(couriersRes.data.couriers || []);
-        console.log('Couriers loaded:', couriersRes.data.couriers?.length);
+        console.log('Couriers loaded:', couriersRes.data.couriers);
       }
       
       if (storesRes.success) {
         setStores(storesRes.data.stores || []);
-        console.log('Stores loaded:', storesRes.data.stores?.length);
+        console.log('Stores loaded:', storesRes.data.stores);
       }
     } catch (error) {
       console.error('Failed to fetch form data:', error);
@@ -95,8 +87,36 @@ const Donations = () => {
   };
 
   const handleCreateDonation = async () => {
-    if (!selectedProduct || !selectedRecipient || !selectedStore || !selectedCourier) {
-      toast.error('Please complete all selections');
+    // Detailed validation
+    console.log('=== Creating Donation ===');
+    console.log('Selected Product:', selectedProduct);
+    console.log('Selected Recipient:', selectedRecipient);
+    console.log('Selected Store:', selectedStore);
+    console.log('Selected Courier:', selectedCourier);
+    
+    if (!selectedProduct) {
+      toast.error('Please select a product');
+      return;
+    }
+    
+    if (!selectedRecipient) {
+      toast.error('Please select a recipient');
+      return;
+    }
+    
+    if (!selectedStore) {
+      toast.error('Please select a store');
+      return;
+    }
+    
+    if (!selectedCourier) {
+      toast.error('Please select a courier');
+      return;
+    }
+
+    // Validate product has valid ID
+    if (!selectedProduct.id) {
+      toast.error('Invalid product selected');
       return;
     }
 
@@ -109,17 +129,25 @@ const Donations = () => {
         productIds: [selectedProduct.id],
         amount: selectedProduct.price,
       };
-
+      
+      console.log('Sending donation data:', donationData);
+      
       const response = await createDonation(donationData);
+      console.log('Donation response:', response);
+      
       if (response.success) {
         toast.success('Donation created successfully!');
         setShowModal(false);
         resetForm();
         fetchDonations();
-        fetchFormData(); // Refresh data
+        fetchFormData();
+      } else {
+        toast.error(response.message || 'Failed to create donation');
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to create donation');
+      console.error('Donation error:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to create donation';
+      toast.error(errorMessage);
     } finally {
       setCreating(false);
     }
@@ -133,11 +161,16 @@ const Donations = () => {
   };
 
   const handleProductSelect = (productId) => {
+    console.log('Selected product ID:', productId);
     const product = products.find(p => p.id === productId);
+    console.log('Found product:', product);
     setSelectedProduct(product);
-    // Find the store that owns this product
-    const store = stores.find(s => s.walletAddress === product?.storeAddress);
-    setSelectedStore(store);
+    
+    if (product && product.storeAddress) {
+      const store = stores.find(s => s.walletAddress === product.storeAddress);
+      console.log('Found store:', store);
+      setSelectedStore(store);
+    }
   };
 
   const refreshData = () => {
@@ -160,15 +193,17 @@ const Donations = () => {
 
   console.log('=== Donation Page Debug ===');
   console.log('User role:', user?.role);
+  console.log('User verified:', user?.isVerified);
   console.log('Products:', products.length);
-  console.log('Available Products:', availableProducts.length);
+  console.log('Available Products:', availableProducts);
   console.log('Recipients:', recipients.length);
-  console.log('Available Recipients:', availableRecipients.length);
+  console.log('Available Recipients:', availableRecipients);
   console.log('Couriers:', couriers.length);
-  console.log('Available Couriers:', availableCouriers.length);
+  console.log('Available Couriers:', availableCouriers);
   console.log('==========================');
 
   const canCreateDonation = user?.role === 'DONOR' && 
+    user?.isVerified === true &&
     availableProducts.length > 0 && 
     availableRecipients.length > 0 && 
     availableCouriers.length > 0;
@@ -183,6 +218,11 @@ const Donations = () => {
               ? 'Create new donations and track your contributions' 
               : 'Track and manage your donations'}
           </p>
+          {user?.role === 'DONOR' && !user?.isVerified && (
+            <p className="text-yellow-600 text-sm mt-1">
+              ⚠️ Your account is pending verification. Please wait for admin to verify you.
+            </p>
+          )}
         </div>
         <div className="flex space-x-3">
           <button onClick={refreshData} className="btn-outline flex items-center space-x-2">
@@ -240,7 +280,12 @@ const Donations = () => {
             <h2 className="text-xl font-bold text-gray-800">Create New Donation</h2>
           </div>
 
-          {availableProducts.length === 0 ? (
+          {!user?.isVerified ? (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center">
+              <p className="text-yellow-800">Your account is pending verification.</p>
+              <p className="text-yellow-600 text-sm mt-1">Please wait for admin to verify your account before creating donations.</p>
+            </div>
+          ) : availableProducts.length === 0 ? (
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center">
               <p className="text-yellow-800">No products available for donation at the moment.</p>
               <p className="text-yellow-600 text-sm mt-1">Please check back later.</p>
@@ -271,7 +316,7 @@ const Donations = () => {
                   <option value="">Choose a product...</option>
                   {availableProducts.map(product => (
                     <option key={product.id} value={product.id}>
-                      {product.name} - Rp {Number(product.price).toLocaleString('id-ID')}
+                      {product.name} - Rp {Number(product.price).toLocaleString('id-ID')} (Stock: {product.stock})
                     </option>
                   ))}
                 </select>
@@ -282,6 +327,9 @@ const Donations = () => {
                     </p>
                     <p className="text-xs text-green-600 mt-1">
                       Store: {selectedStore.name || selectedStore.walletAddress?.slice(0, 15)}...
+                    </p>
+                    <p className="text-xs text-green-600">
+                      Price: Rp {Number(selectedProduct.price).toLocaleString('id-ID')}
                     </p>
                   </div>
                 )}
@@ -298,6 +346,7 @@ const Donations = () => {
                   value={selectedRecipient?.walletAddress || ''}
                   onChange={(e) => {
                     const recipient = availableRecipients.find(u => u.walletAddress === e.target.value);
+                    console.log('Selected recipient:', recipient);
                     setSelectedRecipient(recipient);
                   }}
                 >
@@ -321,6 +370,7 @@ const Donations = () => {
                   value={selectedCourier?.walletAddress || ''}
                   onChange={(e) => {
                     const courier = availableCouriers.find(u => u.walletAddress === e.target.value);
+                    console.log('Selected courier:', courier);
                     setSelectedCourier(courier);
                   }}
                 >
