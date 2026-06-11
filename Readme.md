@@ -5,7 +5,6 @@
 [![Node.js](https://img.shields.io/badge/Node.js-%5E20-green)](https://nodejs.org/)
 [![Hardhat](https://img.shields.io/badge/Hardhat-%5E2.19.0-yellow)](https://hardhat.org/)
 [![Polygon](https://img.shields.io/badge/Polygon-PoS-8247E5)](https://polygon.technology/)
-[![License](https://img.shields.io/badge/License-MIT-lightgrey)](LICENSE)
 
 > **"From Wallet to Table — Transparent, Accountable, Immutable."**
 
@@ -189,7 +188,7 @@ foodchain/
 - **Git**
 
 **Optional for Production:**
-- Polygon Amoy Testnet MATIC (from [Polygon Faucet](https://faucet.polygon.technology/))
+- Polygon Amoy Testnet (from [Polygon Faucet](https://faucet.polygon.technology/))
 - Alchemy/Infura API key for RPC endpoint
 - Pinata API key for IPFS
 
@@ -431,12 +430,6 @@ npx hardhat run scripts/deploy.js --network polygonAmoy
 ### Verify Contracts on PolygonScan
 ```bash
 npx hardhat verify --network polygonAmoy DEPLOYED_CONTRACT_ADDRESS
-```
-
-### Deploy Frontend to Vercel
-```bash
-cd foodchain-frontend
-vercel --prod
 ```
 
 ---
