@@ -13,33 +13,6 @@ A blockchain-based food donation platform that applies the **food-not-cash** pri
 
 ---
 
-## 📑 Table of Contents
-
-- [Overview](#-overview)
-- [Problem Statement](#-problem-statement)
-- [Key Features](#-key-features)
-- [System Architecture](#-system-architecture)
-- [Smart Contracts](#-smart-contracts)
-- [Technology Stack](#-technology-stack)
-- [Project Structure](#-project-structure)
-- [Getting Started](#-getting-started)
-  - [Prerequisites](#prerequisites)
-  - [Installation](#installation)
-  - [Configuration](#configuration)
-  - [Running the System](#running-the-system)
-  - [Demo Script](#demo-script)
-- [Actors & Roles](#-actors--roles)
-- [Donation Lifecycle](#-donation-lifecycle)
-- [API Documentation](#-api-documentation)
-- [Testing](#-testing)
-- [Deployment](#-deployment)
-- [Screenshots](#-screenshots)
-- [Contributors](#-contributors)
-- [License](#-license)
-- [Acknowledgments](#-acknowledgments)
-
----
-
 ## 🔍 Overview
 
 FoodChain is a decentralized application (DApp) designed to solve the transparency and accountability problems in food aid distribution. Built on **Polygon PoS** blockchain, the system uses smart contracts to create an escrow mechanism that ensures donation funds are only released when verified recipients confirm receipt of food packages.
