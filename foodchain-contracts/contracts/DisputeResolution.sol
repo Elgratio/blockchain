@@ -6,13 +6,7 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "./UserRegistry.sol";
 import "./DonationEscrow.sol";
 
-/**
- * @title DisputeResolution
- * @author FoodChain Team
- * @notice Mengelola proses mediasi dan penyelesaian perselisihan antara
- *         penerima donasi dan toko mitra. Setiap bukti tersimpan on-chain
- *         sebagai hash IPFS transparan dan tidak dapat dipalsukan.
- */
+
 contract DisputeResolution is Ownable, ReentrancyGuard {
 
     UserRegistry  public immutable userRegistry;

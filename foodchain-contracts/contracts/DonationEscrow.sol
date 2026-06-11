@@ -8,13 +8,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./UserRegistry.sol";
 import "./StoreRegistry.sol";
 
-/**
- * @title DonationEscrow
- * @author FoodChain Team
- * @notice Jantung sistem FoodChain. Mengelola seluruh siklus hidup donasi:
- *         penciptaan, konfirmasi bertingkat, pencairan, dan refund.
- *         Dana TIDAK DAPAT diakses oleh pihak manapun di luar logika kontrak ini.
- */
+
 contract DonationEscrow is Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
@@ -251,10 +245,10 @@ contract DonationEscrow is Ownable, ReentrancyGuard {
         string calldata _receivedPhotoHash,
         uint8 _rating
     )
-        external
-        nonReentrant
-        onlyRecipient(_donationId)
-        inStatus(_donationId, DonationStatus.IN_DELIVERY)
+    external
+    nonReentrant
+    onlyRecipient(_donationId)
+    inStatus(_donationId, DonationStatus.IN_DELIVERY)
     {
         require(_rating >= 1 && _rating <= 5, "Escrow: rating must be 1-5");
         require(bytes(_receivedPhotoHash).length > 0, "Escrow: photo required");

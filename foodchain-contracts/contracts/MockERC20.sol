@@ -25,7 +25,7 @@ contract MockERC20 is ERC20, Ownable {
         _mint(to, amount);
     }
 
-    /// @notice Override decimals agar bisa disesuaikan (USDC = 6)
+    /// @notice Override decimals agar bisa disesuaikan
     function decimals() public view override returns (uint8) {
         return _decimals;
     }

@@ -1,0 +1,72 @@
+{
+  "users": {
+    "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266": {
+      "id": "8000e026-e7a6-487f-8761-446074b18bb3",
+      "walletAddress": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+      "role": "ADMIN",
+      "name": "Admin FoodChain",
+      "email": "admin@foodchain.id",
+      "phone": null,
+      "dataHash": "bafkrei6f241d8971b5870f87c8131683ef83cd156fdb",
+      "isVerified": true,
+      "isActive": true,
+      "createdAt": "2026-06-10T17:35:37.465Z",
+      "updatedAt": "2026-06-10T17:35:37.465Z"
+    },
+    "0x70997970C51812dc3A010C7d01b50e0d17dc79C8": {
+      "id": "89f42d34-4691-402e-9a47-6ba9a3639aa6",
+      "walletAddress": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+      "role": "DONOR",
+      "name": "Budi Santoso",
+      "email": "budi@email.com",
+      "phone": null,
+      "dataHash": "bafkrei7bc710edfc1619e1f85132e12f87bf050751c3",
+      "isVerified": false,
+      "isActive": true,
+      "createdAt": "2026-06-10T17:36:27.474Z",
+      "updatedAt": "2026-06-10T17:36:27.474Z"
+    },
+    "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC": {
+      "id": "178cd6db-9d2a-46c3-aa05-2cc6751d0aee",
+      "walletAddress": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+      "role": "STORE",
+      "name": "Toko Berkah Pangan",
+      "email": null,
+      "phone": "08123456789",
+      "dataHash": "bafkreia09cbd84eb05cfd2de12c0f0aacd9f19aff393",
+      "isVerified": false,
+      "isActive": true,
+      "createdAt": "2026-06-10T17:36:27.515Z",
+      "updatedAt": "2026-06-10T17:36:27.515Z"
+    },
+    "0x90F79bf6EB2c4f870365E785982E1f101E93b906": {
+      "id": "67f9a77a-7032-4728-9db6-60451c77071b",
+      "walletAddress": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+      "role": "RECIPIENT",
+      "name": "Yayasan Siti Rahayu",
+      "email": null,
+      "phone": "08987654321",
+      "dataHash": "bafkrei88b460b4e22539f8f4178e2d596889c2e1dcfd",
+      "isVerified": false,
+      "isActive": true,
+      "createdAt": "2026-06-10T17:36:27.609Z",
+      "updatedAt": "2026-06-10T17:36:27.609Z"
+    },
+    "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65": {
+      "id": "9714f58a-9cf2-482c-a900-0306f75da1f3",
+      "walletAddress": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",
+      "role": "COURIER",
+      "name": "Kurir Express",
+      "email": null,
+      "phone": "08555111222",
+      "dataHash": "bafkrei2b4ff916d895533af7f7e2b1caff5485c2df38",
+      "isVerified": false,
+      "isActive": true,
+      "createdAt": "2026-06-10T17:36:27.660Z",
+      "updatedAt": "2026-06-10T17:36:27.660Z"
+    }
+  },
+  "products": {},
+  "donations": {},
+  "disputes": {}
+}

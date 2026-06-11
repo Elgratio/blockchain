@@ -4,18 +4,13 @@ pragma solidity ^0.8.20;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-/**
- * @title UserRegistry
- * @author FoodChain Team
- * @notice Registri identitas terpusat untuk semua aktor dalam sistem FoodChain.
- *         Data pribadi TIDAK disimpan on-chain, hanya hash IPFS sebagai pointer.
- */
+
 contract UserRegistry is Ownable, ReentrancyGuard {
 
-    // ─── ENUMS ───────────────────────────────────────────────────
+    // ─── ENUMS 
     enum Role { DONOR, STORE, RECIPIENT, COURIER, ADMIN }
 
-    // ─── STRUCTS ─────────────────────────────────────────────────
+    // ─── STRUCTS 
     struct User {
         address walletAddress;
         Role role;
@@ -25,18 +20,18 @@ contract UserRegistry is Ownable, ReentrancyGuard {
         bool isActive;
     }
 
-    // ─── STATE VARIABLES ─────────────────────────────────────────
+    // ─── STATE VARIABLES 
     mapping(address => User) private users;
     mapping(address => bool) private registeredAddresses;
 
-    // ─── EVENTS ──────────────────────────────────────────────────
+    // ─── EVENTS 
     event UserRegistered(address indexed user, Role role, uint256 timestamp);
     event UserVerified(address indexed user, address indexed verifiedBy);
     event UserSuspended(address indexed user, address indexed suspendedBy);
     event UserReactivated(address indexed user, address indexed reactivatedBy);
     event DataHashUpdated(address indexed user, string newHash);
 
-    // ─── MODIFIERS ───────────────────────────────────────────────
+    // ─── MODIFIERS 
     modifier onlyRegistered(address _addr) {
         require(registeredAddresses[_addr], "UserRegistry: address not registered");
         _;
@@ -48,10 +43,10 @@ contract UserRegistry is Ownable, ReentrancyGuard {
         _;
     }
 
-    // ─── CONSTRUCTOR ─────────────────────────────────────────────
+    // ─── CONSTRUCTOR 
     constructor() Ownable(msg.sender) {}
 
-    // ─── EXTERNAL FUNCTIONS ───────────────────────────────────────
+    // ─── EXTERNAL FUNCTIONS 
 
     /**
      * @notice Mendaftarkan pengguna baru ke sistem.
@@ -127,7 +122,7 @@ contract UserRegistry is Ownable, ReentrancyGuard {
         emit DataHashUpdated(msg.sender, _newHash);
     }
 
-    // ─── VIEW FUNCTIONS ───────────────────────────────────────────
+    // === VIEW FUNCTIONS ===
 
     function isVerified(address _user) external view returns (bool) {
         return users[_user].isVerified && users[_user].isActive;

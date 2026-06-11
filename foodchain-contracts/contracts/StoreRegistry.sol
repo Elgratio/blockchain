@@ -5,12 +5,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "./UserRegistry.sol";
 
-/**
- * @title StoreRegistry
- * @author FoodChain Team
- * @notice Mengelola katalog produk toko mitra dan sistem reputasi on-chain.
- *         Reputasi bersifat transparan dan tidak dapat dimanipulasi.
- */
+
 contract StoreRegistry is Ownable, ReentrancyGuard {
 
     UserRegistry public immutable userRegistry;
